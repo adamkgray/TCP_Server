@@ -12,7 +12,40 @@
 #include <unistd.h>     /* read, write */
 #include <netinet/in.h> /* sockaddr_in, socklen_t */
 
+typedef struct sockaddr sockaddr_t;
+typedef struct sockaddr_in sockaddr_in_t;
+
+#define open_socket() \
+    socket(AF_INET, SOCK_STREAM, 0)
+
+#define bind_socket_to_port(parent_fd, p_server_address) \
+    bind(parent_fd, (sockaddr_t *)p_server_address, sizeof(*p_server_address))
+
+#define accept_connection(parent_fd, p_server_address, client_length) \
+    accept(parent_fd, (sockaddr_t *)p_server_address, (socklen_t *)&client_length)
+
+sockaddr_in_t * create_server_address(uint32_t port) {
+    sockaddr_in_t * p_server_address = (sockaddr_in_t *)malloc(sizeof(sockaddr_in_t));
+    if (p_server_address == NULL) {
+        return NULL;
+    }
+    memset(p_server_address, 0, sizeof(*p_server_address));
+    p_server_address->sin_family = AF_INET;
+    p_server_address->sin_addr.s_addr = htonl(INADDR_ANY);
+    p_server_address->sin_port = htons(port);
+    return p_server_address;
+}
+
 int main(int argc, char ** argv) {
+    uint32_t parent_fd;                                 /* Parent file descriptor */
+    uint32_t child_fd;                                  /* Child file descriptor */
+    sockaddr_in_t client_address;                       /* Client connection */
+    uint32_t client_length = sizeof(client_address);    /* Size of client */
+    uint32_t port;                                      /* Port to listen on */
+    uint32_t BUFFER_SIZE = 1024;                        /* Maximum number of chars to receive */
+    char buffer[BUFFER_SIZE];                           /* Input buffer */
+    uint32_t bytes_proccessed = 0;                      /* Bytes process by read & write system calls */
+
     /* Check for correct number of arguments */
     if (argc != 2) {
         fprintf(stderr, "Usage: %s <port>\n", argv[0]);
@@ -20,26 +53,28 @@ int main(int argc, char ** argv) {
     }
 
     /* Get port number */
-    uint32_t PORT = atoi(argv[1]);
-    if (!PORT) {
+    port = atoi(argv[1]);
+    if (!port) {
         fprintf(stderr, "ERROR invalid port\n");
         return 1;
     }
 
     /* Open socket, create parent file descriptor */
-    uint32_t parent_fd = socket(AF_INET, SOCK_STREAM, 0);
+    parent_fd = open_socket();
     if (parent_fd < 0) {
         fprintf(stderr, "ERROR opening socket\n");
         return 1;
     }
 
+    /* Create server address */
+    sockaddr_in_t * p_server_address = create_server_address(port);
+    if (p_server_address == NULL) {
+        fprintf(stderr, "ERROR creating server address\n");
+        return 1;
+    }
+
     /* Bind socket to port */
-    struct sockaddr_in server_address;
-    memset(&server_address, 0, sizeof(server_address));
-    server_address.sin_family = AF_INET;
-    server_address.sin_addr.s_addr = htonl(INADDR_ANY);
-    server_address.sin_port = htons(PORT);
-    if (bind(parent_fd, (struct sockaddr *)(&server_address), sizeof(server_address))) {
+    if (bind_socket_to_port(parent_fd, p_server_address) < 0) {
         fprintf(stderr, "ERROR binding\n");
         return 1;
     }
@@ -49,25 +84,19 @@ int main(int argc, char ** argv) {
         fprintf(stderr, "ERROR listening\n");
         return 1;
     }
-    printf("TCP server is now listening on port %d ...\n", PORT);
-
-    /* Client vars */
-    struct sockaddr_in client_address;
-    uint32_t client_length = sizeof(client_address);
+    printf("TCP server is now listening on port %d ...\n", port);
 
     /* Ye olde infinite loop */
     for (;;) {
 
         /* Wait for connection request */
-        uint32_t child_fd = accept(parent_fd, (struct sockaddr *)&server_address, (socklen_t *)&client_length);
+        child_fd = accept_connection(parent_fd, p_server_address, client_length);
         if (child_fd < 0) {
             fprintf(stderr, "ERROR accepting\n");
             return 1;
         }
 
-        uint32_t BUFFER_SIZE = 1024;
-        char buffer[BUFFER_SIZE];
-        uint32_t bytes_proccessed = 0;
+        /* Clear buffer */
         memset(buffer, 0, sizeof(buffer));
 
         /* Listen */
@@ -95,3 +124,4 @@ int main(int argc, char ** argv) {
 
     return 0;
 }
+
