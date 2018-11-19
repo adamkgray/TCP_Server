@@ -93,7 +93,7 @@ int main(int argc, char ** argv) {
 
         /* Log incoming request */
         printf("\nReceived %d bytes\n", bytes_proccessed);
-        printf("Message:\n%s\n", buffer);
+        printf("%s\n", buffer);
 
         /* Respond */
         char response[] = "TCP server response!\n";
