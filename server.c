@@ -15,26 +15,11 @@
 typedef struct sockaddr sockaddr_t;
 typedef struct sockaddr_in sockaddr_in_t;
 
-#define open_socket() \
-    socket(AF_INET, SOCK_STREAM, 0)
-
 #define bind_socket_to_port(parent_fd, p_server_address) \
     bind(parent_fd, (sockaddr_t *)p_server_address, sizeof(*p_server_address))
 
 #define accept_connection(parent_fd, p_server_address, client_length) \
     accept(parent_fd, (sockaddr_t *)p_server_address, (socklen_t *)&client_length)
-
-sockaddr_in_t * create_server_address(uint32_t port) {
-    sockaddr_in_t * p_server_address = (sockaddr_in_t *)malloc(sizeof(sockaddr_in_t));
-    if (p_server_address == NULL) {
-        return NULL;
-    }
-    memset(p_server_address, 0, sizeof(*p_server_address));
-    p_server_address->sin_family = AF_INET;
-    p_server_address->sin_addr.s_addr = htonl(INADDR_ANY);
-    p_server_address->sin_port = htons(port);
-    return p_server_address;
-}
 
 int main(int argc, char ** argv) {
     uint32_t parent_fd;                                 /* Parent file descriptor */
@@ -60,21 +45,21 @@ int main(int argc, char ** argv) {
     }
 
     /* Open socket, create parent file descriptor */
-    parent_fd = open_socket();
+    parent_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (parent_fd < 0) {
         fprintf(stderr, "ERROR opening socket\n");
         return 1;
     }
 
     /* Create server address */
-    sockaddr_in_t * p_server_address = create_server_address(port);
-    if (p_server_address == NULL) {
-        fprintf(stderr, "ERROR creating server address\n");
-        return 1;
-    }
+    sockaddr_in_t server_address;
+    memset(&server_address, 0, sizeof(server_address));
+    server_address.sin_family = AF_INET;
+    server_address.sin_addr.s_addr = htonl(INADDR_ANY);
+    server_address.sin_port = htons(port);
 
     /* Bind socket to port */
-    if (bind_socket_to_port(parent_fd, p_server_address) < 0) {
+    if (bind_socket_to_port(parent_fd, &server_address) < 0) {
         fprintf(stderr, "ERROR binding\n");
         return 1;
     }
@@ -90,7 +75,7 @@ int main(int argc, char ** argv) {
     for (;;) {
 
         /* Wait for connection request */
-        child_fd = accept_connection(parent_fd, p_server_address, client_length);
+        child_fd = accept_connection(parent_fd, &server_address, client_length);
         if (child_fd < 0) {
             fprintf(stderr, "ERROR accepting\n");
             return 1;
