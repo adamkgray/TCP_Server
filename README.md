@@ -5,13 +5,14 @@ A minimal TCP server and client wrapper written in C
 ## Server
 
 The server works like this:
-    * Open socket
-    * Bind socket to local interface
-    * Accept new connection
-    * Read from connection
-    * Write to connection
-    * Close connection
-    * Accept new connection ...
+
+* Open socket
+* Bind socket to local interface
+* Accept new connection
+* Read from connection
+* Write to connection
+* Close connection
+* Accept new connection ...
 
 #### Sockets
 
@@ -62,10 +63,11 @@ struct in_addr {
 ```
 
 In practice, you only need to do this:
-    * Create a new `struct sockaddr_in`
-    * Set `sin_family` to `AF_INET`
-    * Set `sin_port` to `htons(port)` (This is where you pass in the port to listen on)
-    * Set `sin_addr.s_addr` to `htonl(INADDR_ANY)`
+
+* Create a new `struct sockaddr_in`
+* Set `sin_family` to `AF_INET`
+* Set `sin_port` to `htons(port)` (This is where you pass in the port to listen on)
+* Set `sin_addr.s_addr` to `htonl(INADDR_ANY)`
 
 `INADDR_ANY` is used when you don't need to bind a socket to a specific IP. When you use this value as the address when calling bind() , the socket accepts connections to all the IPs of the machine.
 
