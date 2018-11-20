@@ -15,7 +15,7 @@
 typedef struct sockaddr sockaddr_t;
 typedef struct sockaddr_in sockaddr_in_t;
 
-#define bind_socket_to_port(parent_fd, p_server_address) \
+#define bind_socket(parent_fd, p_server_address) \
     bind(parent_fd, (sockaddr_t *)p_server_address, sizeof(*p_server_address))
 
 #define accept_connection(parent_fd, p_server_address, client_length) \
@@ -58,8 +58,8 @@ int main(int argc, char ** argv) {
     server_address.sin_addr.s_addr = htonl(INADDR_ANY);
     server_address.sin_port = htons(port);
 
-    /* Bind socket to port */
-    if (bind_socket_to_port(parent_fd, &server_address) < 0) {
+    /* Bind socket */
+    if (bind_socket(parent_fd, &server_address) < 0) {
         fprintf(stderr, "ERROR binding\n");
         return 1;
     }
@@ -69,7 +69,7 @@ int main(int argc, char ** argv) {
         fprintf(stderr, "ERROR listening\n");
         return 1;
     }
-    printf("TCP server is now listening on port %d ...\n", port);
+    printf("Thine TCP server doth listen on port %d ...\n", port);
 
     /* Ye olde infinite loop */
     for (;;) {
@@ -96,7 +96,7 @@ int main(int argc, char ** argv) {
         printf("%s\n", buffer);
 
         /* Respond */
-        char response[] = "TCP server response!\n";
+        char response[] = "Fare Thee Well!\n";
         bytes_proccessed = write(child_fd, response, strlen(response));
         if (bytes_proccessed < 0) {
             fprintf(stderr, "ERROR writing\n");
