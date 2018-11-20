@@ -73,10 +73,31 @@ In practice, you only need to do this:
 
 Yet what are these `htonl()` and `htons()` functions?
 
-According to the man pages, these routines convert 16 and 32 bit quantities between 'network byte order' and 'host byte order' (network byte order is big endian, or most significant byte first). This, however, doesn't mean much to me at this point in my life, so I am content trusting that it just works and moving on.
+They stand for 'Host To Network Long' and 'Host To Network Short' respectively. According to the man pages, these routines convert 16 and 32 bit quantities between 'network byte order' and 'host byte order' (network byte order is big endian, or most significant byte first). This, however, doesn't mean much to me at this point in my life, so I am content trusting that it just works and moving on.
 
+#### Listening
 
+A willingness to accept incoming connections and a queue limit for incoming connections are specified with `listen()`
 
+* `listen(int socket, int backlog);`
+    - `socket` is the file descriptor value returned by calling `socket()`
+    - `backlog` is the number of queued incoming connections. So if a client connects, but then takes forever to send over data, the others who have connected after will have to wait. But as soon as the server is doing whatever it's gonna do, it can handle the next connection in the backlog
 
-## TCP Client
+This one is pretty simple. Just call this function to turn it on.
 
+#### Accepting
+
+To accept new connections to the socket, call `accept()`. This extracts the first connection request on the queue of pending connections, creates a new socket with the same properties of socket, and allocates a new file descriptor for the socket.
+
+* `accept(int socket, struct sockaddr * address, socklen_t * address_len)`
+    - `socket` is the file descriptor value returned by calling `socket()`
+    - `address` is a pointer to the same sockaddr struct we made for `bind()`
+    - `address_len` is the `sizeof` the `address`;
+
+So the arguments needed to call this function are the same needed to call `bind()`
+
+#### Reading and Writing
+
+Use `read()` and `write()`
+
+These are just system calls that read and write to file descriptors. There's nothing special about them, and they are not needed to make the server work. But reading the client input and sending a response is common enough that it feels right to include them in this simple server.
